@@ -1,15 +1,17 @@
 package data;
 
-import entities.Cliente;
+
+import entites.Cliente;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
-import util.ErrorLogger;
-import java.util.logging.Level;
 
 /**
  *
@@ -19,36 +21,26 @@ public class CienteData {
 
     static Connection cn = Conn.connectSQLite();
     static PreparedStatement ps;
-    static ErrorLogger log = new ErrorLogger(CienteData.class.getName());
 
-    public static int create(Cliente d) {
-        int rsId = 0;
-        String[] returns = {"id"};
+    public static int registrar(Cliente d) {
+        //d.nombres = "Juan";
+        int rsu = 0;
         String sql = "INSERT INTO cliente(nombres, infoadic) "
                 + "VALUES(?,?)";
         int i = 0;
         try {
-            ps = cn.prepareStatement(sql, returns);
+            ps = cn.prepareStatement(sql);
             ps.setString(++i, d.getNombres());
             ps.setString(++i, d.getInfoadic());
-            rsId = ps.executeUpdate();// 0 no o 1 si commit
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    rsId = rs.getInt(1); // select tk, max(id)  from cliente
-                    //System.out.println("rs.getInt(rsId): " + rsId);
-                }
-                rs.close();
-            }
+            rsu = ps.executeUpdate();
         } catch (SQLException ex) {
-            //System.err.println("create:" + ex.toString());
-            log.log(Level.SEVERE, "create", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return rsId;
+        return rsu;
     }
 
-    public static int update(Cliente d) {
-        System.out.println("actualizar d.getId(): " + d.getId());
-        int comit = 0;
+    public static int actualizar(Cliente d) {
+        int rsu = 0;
         String sql = "UPDATE cliente SET "
                 + "nombres=?, "
                 + "infoadic=? "
@@ -59,45 +51,36 @@ public class CienteData {
             ps.setString(++i, d.getNombres());
             ps.setString(++i, d.getInfoadic());
             ps.setInt(++i, d.getId());
-            comit = ps.executeUpdate();
+            rsu = ps.executeUpdate();
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "update", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return comit;
+        return rsu;
     }
 
-    public static int delete(int id) throws Exception {
-        int comit = 0;
+    public static int eliminar(int id) {
+        int rsu = 0;
         String sql = "DELETE FROM cliente WHERE id = ?";
         try {
             ps = cn.prepareStatement(sql);
             ps.setInt(1, id);
-            comit = ps.executeUpdate();
+            rsu = ps.executeUpdate();
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "delete", ex);
-            // System.err.println("NO del " + ex.toString());
-            throw new Exception("Detalle:" + ex.getMessage());
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return comit;
+        return rsu;
     }
 
-    public static List<Cliente> list(String filter) {
-        String filtert = null;
-        if (filter == null) {
-            filtert = "";
-        } else {
-            filtert = filter;
-        }
-        System.out.println("list.filtert:" + filtert);
+    public static List<Cliente> list(String busca) {
+        List<Cliente> ls = new ArrayList<Cliente>();
 
-        List<Cliente> ls = new ArrayList();
         String sql = "";
-        if (filtert.equals("")) {
+        if (busca.equals("")) {
             sql = "SELECT * FROM cliente ORDER BY id";
         } else {
-            sql = "SELECT * FROM cliente WHERE (id LIKE'" + filter + "%' OR "
-                    + "nombres LIKE'" + filter + "%' OR infoadic LIKE'" + filter + "%' OR "
-                    + "id LIKE'" + filter + "%') "
+            sql = "SELECT * FROM cliente WHERE (id LIKE'" + busca + "%' OR "
+                    + "nombres LIKE'" + busca + "%' OR infoadic LIKE'" + busca + "%' OR "
+                    + "id LIKE'" + busca + "%') "
                     + "ORDER BY nombres";
         }
         try {
@@ -111,36 +94,16 @@ public class CienteData {
                 ls.add(d);
             }
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "list", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ls;
     }
 
-    public static Cliente getByPId(int id) {
-        Cliente d = new Cliente();
-
-        String sql = "SELECT * FROM cliente WHERE id = ? ";
-        int i = 0;
-        try {
-            ps = cn.prepareStatement(sql);
-            ps.setInt(++i, id);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                d.setId(rs.getInt("id"));
-                d.setNombres(rs.getString("nombres"));
-                d.setInfoadic(rs.getString("infoadic"));
-            }
-        } catch (SQLException ex) {
-            log.log(Level.SEVERE, "getByPId", ex);
-        }
-        return d;
-    }
-    /*
     public static void iniciarTransaccion() {
         try {
             cn.setAutoCommit(false);
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "iniciarTransaccion", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -148,7 +111,7 @@ public class CienteData {
         try {
             cn.commit();
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "finalizarTransaccion", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -156,8 +119,7 @@ public class CienteData {
         try {
             cn.rollback();
         } catch (SQLException ex) {
-            log.log(Level.SEVERE, "cancelarTransaccion", ex);
+            Logger.getLogger(CienteData.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-     */
 }
